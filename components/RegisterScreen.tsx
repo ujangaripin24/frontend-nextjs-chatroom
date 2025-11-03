@@ -87,7 +87,7 @@ export default function RegisterScreen() {
                   </div>
                 </form>
                 <hr />
-                <div className='flex flex-col gap-4'>
+                <div className='flex flex-row gap-4'>
                   <Button className='w-full' outline color={'blue'} size="lg" type="submit">
                     <FaGoogle />
                   </Button>
