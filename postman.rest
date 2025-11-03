@@ -38,7 +38,7 @@ Content-Type: application/json
 
 ### login user ###
 GET http://localhost:8050/auth/profile
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDNAZ21haWwuY29tIiwiZXhwIjoxNzYxODIzODAwLCJ1dWlkIjoiNWQ5NDgwYzktNDFkOC00NzM4LWJiNWEtYjM0ZTdlMWI4YmI0In0.E8WGmolkcLHO_W3r4rUImQwvhJvi0NEZUj_fzRRexc4
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDJAZ21haWwuY29tIiwiZXhwIjoxNzYyMTYxNjg4LCJ1dWlkIjoiOGQ4ZTg4YjItYWFjYi00ZjMwLWE3MTgtYTEwNGUwNjdmOWM5In0.GcL3VVGDB2KvYdBZn23iQ_dHdD7_rPc2BVQ4yVee-Tg
 
 ### login user ###
 POST http://localhost:8050/auth/refresh

@@ -36,9 +36,9 @@ export default function ProfileScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen p-8">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="rounded-lg shadow p-6">
           <h1 className="text-2xl font-bold mb-6">Profile</h1>
           {user ? (
             <div className="space-y-6">
@@ -75,10 +75,6 @@ export default function ProfileScreen() {
                 </div>
 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500">User ID</label>
-                    <p className="mt-1 text-sm font-mono text-gray-600 break-all">{user.uuid}</p>
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Account Type</label>
                     <p className="mt-1 text-lg">Standard User</p>
