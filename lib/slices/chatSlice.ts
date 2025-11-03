@@ -68,9 +68,10 @@ const chatSlice = createSlice({
     },
     addMessage: (state, action) => {
       const { roomUUID, message } = action.payload
-      if (state.messages[roomUUID]) {
-        state.messages[roomUUID].push(message)
+      if (!state.messages[roomUUID]) {
+        state.messages[roomUUID] = []
       }
+      state.messages[roomUUID].push(message)
     },
   },
   extraReducers: (builder) => {

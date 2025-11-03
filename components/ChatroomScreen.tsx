@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { fetchRoomMessages, sendNewMessage } from '@/lib/slices/chatSlice'
 import { fetchProfile } from '@/lib/slices/authSlice'
+import { ChatWebSocket } from '@/lib/websocket/chatWebSocket'
 
 export default function ChatRoomScreen() {
   const params = useParams()
@@ -13,13 +14,21 @@ export default function ChatRoomScreen() {
   const { token, user } = useAppSelector((state) => state.auth)
   const { messages, loading } = useAppSelector((state) => state.chat)
   const [newMessage, setNewMessage] = useState('')
+  const [ws, setWs] = useState<ChatWebSocket | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
   const currentMessages = messages[roomUUID] || []
 
-  console.log('=== DEBUG USER ===')
-  console.log('Current User UUID:', user?.uuid)
-  console.log('Current User Data:', user)
+  useEffect(() => {
+    if (token && roomUUID) {
+      const chatWs = new ChatWebSocket(dispatch, token)
+      chatWs.connect()
+      setWs(chatWs)
+
+      return () => {
+        chatWs.disconnect()
+      }
+    }
+  }, [token, roomUUID, dispatch])
 
   useEffect(() => {
     if (roomUUID && token) {
@@ -33,13 +42,16 @@ export default function ChatRoomScreen() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim() || !roomUUID || !token) return
+    if (!newMessage.trim() || !roomUUID || !token || !ws) return
+
+    ws.sendMessage(roomUUID, newMessage)
 
     await dispatch(sendNewMessage({
       token,
       roomUUID,
       content: newMessage
     }))
+    
     setNewMessage('')
   }
 
@@ -109,15 +121,15 @@ export default function ChatRoomScreen() {
               >
                 <div
                   className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isOwnMessage
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-800'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-800'
                     }`}
                 >
                   <div className="text-sm">{message.content}</div>
                   <div
                     className={`text-xs mt-1 ${isOwnMessage
-                        ? 'text-blue-200'
-                        : 'text-gray-500'
+                      ? 'text-blue-200'
+                      : 'text-gray-500'
                       }`}
                   >
                     {formatTime(message.created_at)}
