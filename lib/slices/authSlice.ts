@@ -25,19 +25,13 @@ export const fetchProfile = createAsyncThunk(
   }
 )
 
+
 interface AuthState {
   user: UserProfile | null
   token: string | null
   isAuthenticated: boolean
   loading: boolean
   error: string | null
-}
-
-const getStoredToken = (): string | null => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('auth_token')
-  }
-  return null
 }
 
 const initialState: AuthState = {
@@ -57,7 +51,7 @@ const authSlice = createSlice({
       state.token = null
       state.isAuthenticated = false
       state.error = null
-      
+
       if (typeof window !== 'undefined') {
         localStorage.removeItem('auth_token')
       }
@@ -77,7 +71,7 @@ const authSlice = createSlice({
         state.token = action.payload.access_token
         state.isAuthenticated = true
         state.error = null
-        
+
         if (typeof window !== 'undefined') {
           localStorage.setItem('auth_token', action.payload.access_token)
         }
@@ -100,7 +94,7 @@ const authSlice = createSlice({
         state.token = null
         state.isAuthenticated = false
         state.user = null
-        
+
         if (typeof window !== 'undefined') {
           localStorage.removeItem('auth_token')
         }

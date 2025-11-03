@@ -3,7 +3,8 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
-import { fetchProfile } from '@/lib/slices/authSlice'
+import { fetchProfile, logout } from '@/lib/slices/authSlice'
+import { authAPI } from '@/lib/api/auth'
 
 export default function ProfileScreen() {
   const dispatch = useAppDispatch()
@@ -33,20 +34,31 @@ export default function ProfileScreen() {
     return null
   }
 
+  const handleLogout = async () => {
+    if (token) {
+      try {
+        await authAPI.logout(token)
+      } catch (error) {
+        console.log('Logout API failed, but clearing local state')
+      }
+    }
+    dispatch(logout())
+    router.push('/login')
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow p-6">
           <h1 className="text-2xl font-bold mb-6">Profile</h1>
-          
           {user ? (
             <div className="space-y-6">
               <div className="flex items-center space-x-6">
                 <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center">
                   {user.link_picture ? (
-                    <img 
-                      src={user.link_picture} 
-                      alt="Profile" 
+                    <img
+                      src={user.link_picture}
+                      alt="Profile"
                       className="w-24 h-24 rounded-full object-cover"
                     />
                   ) : (
@@ -72,7 +84,7 @@ export default function ProfileScreen() {
                     <p className="mt-1 text-lg">{user.email}</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-500">User ID</label>
@@ -86,8 +98,8 @@ export default function ProfileScreen() {
               </div>
 
               <div className="border-t pt-6">
-                <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
-                  Edit Profile
+                <button onClick={handleLogout} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                  Logout
                 </button>
               </div>
             </div>

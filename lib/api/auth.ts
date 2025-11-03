@@ -47,5 +47,19 @@ export const authAPI = {
     }
 
     return response.json()
+  },
+
+  logout: async (token: string): Promise<void> => {
+    const response = await fetch('http://localhost:8050/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Logout failed')
+    }
   }
 }

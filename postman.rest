@@ -46,7 +46,7 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDFAZ21h
 
 ### login user ###
 POST http://localhost:8050/auth/logout
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDNAZ21haWwuY29tIiwiZXhwIjoxNzYxODIzODAwLCJ1dWlkIjoiNWQ5NDgwYzktNDFkOC00NzM4LWJiNWEtYjM0ZTdlMWI4YmI0In0.E8WGmolkcLHO_W3r4rUImQwvhJvi0NEZUj_fzRRexc4
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDJAZ21haWwuY29tIiwiZXhwIjoxNzYyMTYwMjE0LCJ1dWlkIjoiOGQ4ZTg4YjItYWFjYi00ZjMwLWE3MTgtYTEwNGUwNjdmOWM5In0.ye1QcYL25Cpmg-dLTM6-McZ5Cw0M8tqydHXxdS6b6C4
 
 ### create room chat ###
 POST http://localhost:8050/chat/rooms
