@@ -15,36 +15,99 @@ export default function ChatRoomScreen() {
   const { messages, loading } = useAppSelector((state) => state.chat)
   const [newMessage, setNewMessage] = useState('')
   const [ws, setWs] = useState<ChatWebSocket | null>(null)
+  const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'error' | 'disconnected'>('disconnected')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  
   const currentMessages = messages[roomUUID] || []
 
+  // SINGLE WebSocket useEffect
   useEffect(() => {
-    if (token && roomUUID) {
-      const chatWs = new ChatWebSocket(dispatch, token)
+    let chatWs: ChatWebSocket | null = null
+    let isMounted = true
 
-      chatWs.connect()
-      setWs(chatWs)
+    const connectWebSocket = async () => {
+      if (!token || !roomUUID) {
+        console.log('❌ Missing token or roomUUID')
+        return
+      }
 
-      return () => {
+      try {
+        setWsStatus('connecting')
+        console.log('🔄 Starting WebSocket connection...')
+        
+        chatWs = new ChatWebSocket(dispatch, token)
+        await chatWs.connect()
+        
+        if (isMounted) {
+          setWs(chatWs)
+          setWsStatus('connected')
+          console.log('✅ WebSocket connected successfully')
+        }
+        
+      } catch (error) {
+        if (isMounted) {
+          console.error('❌ WebSocket connection failed:', error)
+          setWsStatus('error')
+        }
+      }
+    }
+
+    connectWebSocket()
+
+    return () => {
+      isMounted = false
+      console.log('🧹 Cleaning up WebSocket')
+      if (chatWs) {
         chatWs.disconnect()
       }
+      setWsStatus('disconnected')
     }
   }, [token, roomUUID, dispatch])
 
+  // Fetch messages ketika room berubah
   useEffect(() => {
     if (roomUUID && token) {
+      console.log('📥 Fetching room messages...')
       dispatch(fetchRoomMessages({ token, roomUUID }))
     }
   }, [roomUUID, token, dispatch])
 
+  // Auto-scroll ke message terbaru
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [currentMessages])
 
+  // Fetch user profile jika belum ada
+  useEffect(() => {
+    if (token && !user) {
+      console.log('👤 Fetching user profile...')
+      dispatch(fetchProfile(token))
+    }
+  }, [token, user, dispatch])
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim() || !roomUUID || !token || !ws || !user) return
 
+    // Validasi lengkap
+    if (!newMessage.trim() || !roomUUID || !token || !user?.uuid) {
+      console.error('Missing required data for sending message')
+      return
+    }
+
+    // Check WebSocket connection
+    if (!ws || !ws.isConnected()) {
+      console.warn('WebSocket not connected, falling back to HTTP')
+      // Fallback ke HTTP
+      await dispatch(sendNewMessage({
+        token,
+        roomUUID,
+        content: newMessage
+      }))
+      setNewMessage('')
+      return
+    }
+
+    // Optimistic UI
     const tempMessage = {
       uuid: `temp-${Date.now()}`,
       user_id: user.uuid,
@@ -59,16 +122,13 @@ export default function ChatRoomScreen() {
     }))
 
     setNewMessage('')
-    ws.sendMessage(roomUUID, newMessage)
-  }
 
-  useEffect(() => {
-    console.log('User data on mount:', user)
-    if (!user && token) {
-      console.log('Fetching user profile...')
-      dispatch(fetchProfile(token))
+    // Kirim via WebSocket
+    const success = ws.sendMessage(roomUUID, newMessage)
+    if (!success) {
+      console.error('Failed to send via WebSocket, message might not be delivered')
     }
-  }, [user, token, dispatch])
+  }
 
   const getCurrentUserUUID = () => {
     if (!user?.uuid) {
@@ -90,16 +150,35 @@ export default function ChatRoomScreen() {
     }
   }
 
-  console.log('Current User UUID:', user?.uuid)
-  console.log('Messages:', currentMessages)
+  // Debug logs
+  console.log('=== CHAT ROOM DEBUG ===')
+  console.log('User UUID:', user?.uuid)
+  console.log('WebSocket Status:', wsStatus)
+  console.log('WebSocket Instance:', ws)
+  console.log('Messages count:', currentMessages.length)
 
   return (
     <div className="flex-1 flex flex-col bg-white h-screen">
+      {/* Header dengan WebSocket status */}
       <div className="border-b p-4 bg-white shadow-sm">
-        <h2 className="text-lg font-semibold">Chat Room</h2>
-        <p className="text-sm text-gray-500">User: {user?.uuid}</p>
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Chat Room</h2>
+          <div className="flex items-center space-x-2">
+            <div className={`w-3 h-3 rounded-full ${
+              wsStatus === 'connected' ? 'bg-green-500' :
+              wsStatus === 'connecting' ? 'bg-yellow-500' : 
+              wsStatus === 'error' ? 'bg-red-500' :
+              'bg-gray-400'
+            }`}></div>
+            <span className="text-xs text-gray-500 capitalize">
+              {wsStatus}
+            </span>
+          </div>
+        </div>
+        <p className="text-sm text-gray-500 truncate">User: {user?.uuid}</p>
       </div>
 
+      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {loading ? (
           <div className="text-center text-gray-500">Loading messages...</div>
@@ -112,31 +191,31 @@ export default function ChatRoomScreen() {
         ) : (
           currentMessages.map((message) => {
             const currentUserUUID = getCurrentUserUUID()
-            const messageUserID = message.user_id || message.user_id || message.user_id
+            const messageUserID = message.user_id
             const isOwnMessage = currentUserUUID && messageUserID && currentUserUUID === messageUserID
 
             return (
               <div
                 key={message.uuid || `msg-${message.created_at}-${Math.random()}`}
-                className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'
-                  }`}
+                className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isOwnMessage
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-800'
-                    }`}
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    isOwnMessage
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-800'
+                  }`}
                 >
                   <div className="text-sm">{message.content}</div>
                   <div
-                    className={`text-xs mt-1 ${isOwnMessage
-                      ? 'text-blue-200'
-                      : 'text-gray-500'
-                      }`}
+                    className={`text-xs mt-1 ${
+                      isOwnMessage
+                        ? 'text-blue-200'
+                        : 'text-gray-500'
+                    }`}
                   >
                     {formatTime(message.created_at)}
                     {isOwnMessage && ' (You)'}
-                    {!messageUserID && ' [No Sender]'}
                   </div>
                 </div>
               </div>
@@ -146,6 +225,7 @@ export default function ChatRoomScreen() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Message Input */}
       <form onSubmit={handleSendMessage} className="border-t p-4 bg-white">
         <div className="flex space-x-2">
           <input
@@ -154,15 +234,21 @@ export default function ChatRoomScreen() {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message..."
             className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+            disabled={wsStatus === 'connecting'}
           />
           <button
             type="submit"
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || wsStatus === 'connecting'}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Send
+            {wsStatus === 'connecting' ? 'Connecting...' : 'Send'}
           </button>
         </div>
+        {wsStatus === 'error' && (
+          <p className="text-xs text-red-500 mt-2">
+            Connection issue - messages may not be delivered in real-time
+          </p>
+        )}
       </form>
     </div>
   )
