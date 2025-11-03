@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { fetchProfile, logout } from '@/lib/slices/authSlice'
 import { authAPI } from '@/lib/api/auth'
+import LogoutScreen from './LogoutScreen'
 
 export default function ProfileScreen() {
   const dispatch = useAppDispatch()
@@ -32,18 +33,6 @@ export default function ProfileScreen() {
 
   if (!isAuthenticated) {
     return null
-  }
-
-  const handleLogout = async () => {
-    if (token) {
-      try {
-        await authAPI.logout(token)
-      } catch (error) {
-        console.log('Logout API failed, but clearing local state')
-      }
-    }
-    dispatch(logout())
-    router.push('/login')
   }
 
   return (
@@ -98,9 +87,7 @@ export default function ProfileScreen() {
               </div>
 
               <div className="border-t pt-6">
-                <button onClick={handleLogout} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
-                  Logout
-                </button>
+                <LogoutScreen/>
               </div>
             </div>
           ) : (
