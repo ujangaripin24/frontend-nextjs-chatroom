@@ -20,41 +20,37 @@ export default function ChatRoomScreen() {
 
   const currentMessages = messages[roomUUID] || []
 
-  // SINGLE WebSocket useEffect
-  // components/ChatRoomScreen.tsx - WebSocket useEffect
   useEffect(() => {
     let chatWs: ChatWebSocket | null = null
     let isMounted = true
 
     const connectWebSocket = async () => {
-      if (!token || !roomUUID) {
-        console.log('❌ Missing token or roomUUID for WebSocket')
+      if (!token || !roomUUID || !user?.uuid) {
+        console.log('⏳ Waiting for user data...', {
+          token: !!token,
+          roomUUID: !!roomUUID,
+          userUUID: user?.uuid
+        })
         return
       }
 
+      console.log('✅ All data ready, connecting WebSocket...')
+
       try {
         setWsStatus('connecting')
-        console.log('🔄 Starting WebSocket connection...')
-
         chatWs = new ChatWebSocket(dispatch, token)
-        console.log('🔑 Token being used:', token.substring(0, 20) + '...')
-
         await chatWs.connect()
 
         if (isMounted) {
           setWs(chatWs)
           setWsStatus('connected')
-          console.log('✅ WebSocket connected and ready')
+          console.log('🎉 WebSocket connected with user:', user.uuid)
         }
 
       } catch (error: any) {
         if (isMounted) {
           console.error('❌ WebSocket connection failed:', error.message)
           setWsStatus('error')
-          setWs(null) // Ensure ws is null on error
-
-          // Fallback: Use HTTP polling instead
-          console.log('🔄 Falling back to HTTP mode')
         }
       }
     }
@@ -63,14 +59,12 @@ export default function ChatRoomScreen() {
 
     return () => {
       isMounted = false
-      console.log('🧹 Cleaning up WebSocket')
       if (chatWs) {
         chatWs.disconnect()
       }
     }
-  }, [token, roomUUID, dispatch])
+  }, [token, roomUUID, user?.uuid, dispatch])
 
-  // Fetch messages ketika room berubah
   useEffect(() => {
     if (roomUUID && token) {
       console.log('📥 Fetching room messages...')
@@ -78,12 +72,10 @@ export default function ChatRoomScreen() {
     }
   }, [roomUUID, token, dispatch])
 
-  // Auto-scroll ke message terbaru
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [currentMessages])
 
-  // Fetch user profile jika belum ada
   useEffect(() => {
     if (token && !user) {
       console.log('👤 Fetching user profile...')
@@ -94,16 +86,13 @@ export default function ChatRoomScreen() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validasi lengkap
     if (!newMessage.trim() || !roomUUID || !token || !user?.uuid) {
       console.error('Missing required data for sending message')
       return
     }
 
-    // Check WebSocket connection
     if (!ws || !ws.isConnected()) {
       console.warn('WebSocket not connected, falling back to HTTP')
-      // Fallback ke HTTP
       await dispatch(sendNewMessage({
         token,
         roomUUID,
@@ -113,7 +102,6 @@ export default function ChatRoomScreen() {
       return
     }
 
-    // Optimistic UI
     const tempMessage = {
       uuid: `temp-${Date.now()}`,
       user_id: user.uuid,
@@ -129,7 +117,6 @@ export default function ChatRoomScreen() {
 
     setNewMessage('')
 
-    // Kirim via WebSocket
     const success = ws.sendMessage(roomUUID, newMessage)
     if (!success) {
       console.error('Failed to send via WebSocket, message might not be delivered')
@@ -156,24 +143,26 @@ export default function ChatRoomScreen() {
     }
   }
 
-  // Debug logs
   console.log('=== CHAT ROOM DEBUG ===')
   console.log('User UUID:', user?.uuid)
   console.log('WebSocket Status:', wsStatus)
   console.log('WebSocket Instance:', ws)
   console.log('Messages count:', currentMessages.length)
 
+  useEffect(() => {
+    console.log('🔄 Token updated:', token ? 'Has token' : 'No token')
+  }, [token])
+
   return (
     <div className="flex-1 flex flex-col bg-white h-screen">
-      {/* Header dengan WebSocket status */}
       <div className="border-b p-4 bg-white shadow-sm">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">Chat Room</h2>
           <div className="flex items-center space-x-2">
             <div className={`w-3 h-3 rounded-full ${wsStatus === 'connected' ? 'bg-green-500' :
-                wsStatus === 'connecting' ? 'bg-yellow-500' :
-                  wsStatus === 'error' ? 'bg-red-500' :
-                    'bg-gray-400'
+              wsStatus === 'connecting' ? 'bg-yellow-500' :
+                wsStatus === 'error' ? 'bg-red-500' :
+                  'bg-gray-400'
               }`}></div>
             <span className="text-xs text-gray-500 capitalize">
               {wsStatus}
@@ -183,7 +172,6 @@ export default function ChatRoomScreen() {
         <p className="text-sm text-gray-500 truncate">User: {user?.uuid}</p>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {loading ? (
           <div className="text-center text-gray-500">Loading messages...</div>
@@ -206,15 +194,15 @@ export default function ChatRoomScreen() {
               >
                 <div
                   className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isOwnMessage
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-800'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-800'
                     }`}
                 >
                   <div className="text-sm">{message.content}</div>
                   <div
                     className={`text-xs mt-1 ${isOwnMessage
-                        ? 'text-blue-200'
-                        : 'text-gray-500'
+                      ? 'text-blue-200'
+                      : 'text-gray-500'
                       }`}
                   >
                     {formatTime(message.created_at)}
@@ -228,7 +216,6 @@ export default function ChatRoomScreen() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
       <form onSubmit={handleSendMessage} className="border-t p-4 bg-white">
         <div className="flex space-x-2">
           <input
