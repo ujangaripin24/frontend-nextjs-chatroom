@@ -17,37 +17,44 @@ export default function ChatRoomScreen() {
   const [ws, setWs] = useState<ChatWebSocket | null>(null)
   const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'error' | 'disconnected'>('disconnected')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  
+
   const currentMessages = messages[roomUUID] || []
 
   // SINGLE WebSocket useEffect
+  // components/ChatRoomScreen.tsx - WebSocket useEffect
   useEffect(() => {
     let chatWs: ChatWebSocket | null = null
     let isMounted = true
 
     const connectWebSocket = async () => {
       if (!token || !roomUUID) {
-        console.log('❌ Missing token or roomUUID')
+        console.log('❌ Missing token or roomUUID for WebSocket')
         return
       }
 
       try {
         setWsStatus('connecting')
         console.log('🔄 Starting WebSocket connection...')
-        
+
         chatWs = new ChatWebSocket(dispatch, token)
+        console.log('🔑 Token being used:', token.substring(0, 20) + '...')
+
         await chatWs.connect()
-        
+
         if (isMounted) {
           setWs(chatWs)
           setWsStatus('connected')
-          console.log('✅ WebSocket connected successfully')
+          console.log('✅ WebSocket connected and ready')
         }
-        
-      } catch (error) {
+
+      } catch (error: any) {
         if (isMounted) {
-          console.error('❌ WebSocket connection failed:', error)
+          console.error('❌ WebSocket connection failed:', error.message)
           setWsStatus('error')
+          setWs(null) // Ensure ws is null on error
+
+          // Fallback: Use HTTP polling instead
+          console.log('🔄 Falling back to HTTP mode')
         }
       }
     }
@@ -60,7 +67,6 @@ export default function ChatRoomScreen() {
       if (chatWs) {
         chatWs.disconnect()
       }
-      setWsStatus('disconnected')
     }
   }, [token, roomUUID, dispatch])
 
@@ -164,12 +170,11 @@ export default function ChatRoomScreen() {
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">Chat Room</h2>
           <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${
-              wsStatus === 'connected' ? 'bg-green-500' :
-              wsStatus === 'connecting' ? 'bg-yellow-500' : 
-              wsStatus === 'error' ? 'bg-red-500' :
-              'bg-gray-400'
-            }`}></div>
+            <div className={`w-3 h-3 rounded-full ${wsStatus === 'connected' ? 'bg-green-500' :
+                wsStatus === 'connecting' ? 'bg-yellow-500' :
+                  wsStatus === 'error' ? 'bg-red-500' :
+                    'bg-gray-400'
+              }`}></div>
             <span className="text-xs text-gray-500 capitalize">
               {wsStatus}
             </span>
@@ -200,19 +205,17 @@ export default function ChatRoomScreen() {
                 className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    isOwnMessage
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isOwnMessage
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-800'
-                  }`}
+                    }`}
                 >
                   <div className="text-sm">{message.content}</div>
                   <div
-                    className={`text-xs mt-1 ${
-                      isOwnMessage
+                    className={`text-xs mt-1 ${isOwnMessage
                         ? 'text-blue-200'
                         : 'text-gray-500'
-                    }`}
+                      }`}
                   >
                     {formatTime(message.created_at)}
                     {isOwnMessage && ' (You)'}

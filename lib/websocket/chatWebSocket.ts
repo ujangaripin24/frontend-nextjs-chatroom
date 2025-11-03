@@ -1,11 +1,10 @@
 import { addMessage } from "../slices/chatSlice"
 
+// lib/websocket/chatWebSocket.ts
 export class ChatWebSocket {
   private socket: WebSocket | null = null
   private dispatch: any
   private token: string
-  private reconnectAttempts = 0
-  private maxReconnectAttempts = 3
 
   constructor(dispatch: any, token: string) {
     this.dispatch = dispatch
@@ -14,20 +13,29 @@ export class ChatWebSocket {
 
   connect(): Promise<boolean> {
     return new Promise((resolve, reject) => {
+      // Validate token first
+      if (!this.token || this.token.length < 10) {
+        reject(new Error('Invalid token provided'))
+        return
+      }
+
+      const wsUrl = `ws://localhost:8050/ws?token=${this.token}`
+      console.log('🔄 WebSocket connecting to:', wsUrl)
+
       try {
-        const wsUrl = `ws://localhost:8050/ws?token=${this.token}`
-        console.log('🔄 Connecting to WebSocket:', wsUrl)
-        
         this.socket = new WebSocket(wsUrl)
 
-        const connectionTimeout = setTimeout(() => {
-          reject(new Error('Connection timeout'))
+        // Connection timeout
+        const timeout = setTimeout(() => {
+          if (this.socket?.readyState === WebSocket.CONNECTING) {
+            this.socket.close()
+            reject(new Error('Connection timeout after 5 seconds'))
+          }
         }, 5000)
 
         this.socket.onopen = () => {
-          clearTimeout(connectionTimeout)
-          console.log('✅ WebSocket CONNECTED')
-          this.reconnectAttempts = 0
+          clearTimeout(timeout)
+          console.log('✅ WebSocket CONNECTED successfully')
           resolve(true)
         }
 
@@ -52,18 +60,32 @@ export class ChatWebSocket {
         }
 
         this.socket.onclose = (event) => {
-          clearTimeout(connectionTimeout)
-          console.log('🔌 WebSocket disconnected:', event.code, event.reason)
+          clearTimeout(timeout)
+          console.log('🔌 WebSocket CLOSED:', {
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean
+          })
+          
+          if (event.code !== 1000) {
+            reject(new Error(`WebSocket closed with code: ${event.code}`))
+          }
         }
 
-        this.socket.onerror = (error) => {
-          clearTimeout(connectionTimeout)
-          console.error('❌ WebSocket connection error:', error)
-          reject(error)
+        this.socket.onerror = (event) => {
+          clearTimeout(timeout)
+          console.error('❌ WebSocket ERROR event details:', {
+            eventType: event.type,
+            socketReadyState: this.socket?.readyState,
+            url: wsUrl
+          })
+          
+          const error = event instanceof ErrorEvent ? event.error : 'Unknown WebSocket error'
+          reject(new Error(`WebSocket error: ${error}`))
         }
 
       } catch (error) {
-        console.error('💥 WebSocket setup error:', error)
+        console.error('💥 WebSocket constructor error:', error)
         reject(error)
       }
     })
@@ -71,29 +93,40 @@ export class ChatWebSocket {
 
   disconnect() {
     if (this.socket) {
-      console.log('🛑 Disconnecting WebSocket')
+      console.log('🛑 WebSocket disconnecting...')
       this.socket.close(1000, 'Manual disconnect')
       this.socket = null
     }
   }
 
-  sendMessage(roomUUID: string, content: string) {
+  sendMessage(roomUUID: string, content: string): boolean {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       const message = {
         room_uuid: roomUUID,
         content: content,
         type: 'text'
       }
-      console.log('📤 Sending WebSocket message:', message)
+      console.log('📤 WebSocket sending message:', message)
       this.socket.send(JSON.stringify(message))
       return true
     } else {
-      console.error('🚫 WebSocket not connected. State:', this.socket?.readyState)
+      console.warn('🚫 WebSocket not ready. State:', this.getStatus())
       return false
     }
   }
 
   isConnected(): boolean {
     return this.socket?.readyState === WebSocket.OPEN
+  }
+
+  getStatus(): string {
+    if (!this.socket) return 'DISCONNECTED'
+    switch (this.socket.readyState) {
+      case WebSocket.CONNECTING: return 'CONNECTING'
+      case WebSocket.OPEN: return 'CONNECTED'
+      case WebSocket.CLOSING: return 'CLOSING'
+      case WebSocket.CLOSED: return 'CLOSED'
+      default: return 'UNKNOWN'
+    }
   }
 }
