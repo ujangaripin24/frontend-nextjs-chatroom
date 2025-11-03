@@ -1,0 +1,74 @@
+### create user ###
+POST http://localhost:8050/users/create
+Content-Type: application/json
+
+{
+    "username": "user003",
+    "email": "user003@gmail.com",
+    "password": "12345679"
+}
+### get user ###
+GET http://localhost:8050/users/get-all?search=&page=2&size=3
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDFAZ21haWwuY29tIiwiZXhwIjoxNzYxOTExNjExLCJ1dWlkIjoiMjMwMTk0ZmYtNjE2ZC00NDEyLTgxODYtM2U4NmQ5OTk4OTRlIn0.jPvs38YGT0RDD5uAxNGOS4qE2sVa4T9xcYu_avCB1Ts
+
+### get user by uuid ###
+GET http://localhost:8050/users/detail/7e7c308b-c3e4-4611-8eeb-1fa1feaad351
+
+### get user by email ###
+GET http://localhost:8050/users/email/user001@gmail.com
+
+### update user ###
+PUT http://localhost:8050/users/update/7e7c308b-c3e4-4611-8eeb-1fa1feaad351
+Content-Type: application/json
+
+{
+    "username": "user001 (updated!)",
+    "email": "user001@gmail.com",
+    "password": "12345679"
+}
+
+### login user ###
+POST http://localhost:8050/auth/login
+Content-Type: application/json
+
+{
+    "email": "user001@gmail.com",
+    "password": "12345679"
+}
+
+### login user ###
+GET http://localhost:8050/auth/profile
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDNAZ21haWwuY29tIiwiZXhwIjoxNzYxODIzODAwLCJ1dWlkIjoiNWQ5NDgwYzktNDFkOC00NzM4LWJiNWEtYjM0ZTdlMWI4YmI0In0.E8WGmolkcLHO_W3r4rUImQwvhJvi0NEZUj_fzRRexc4
+
+### login user ###
+POST http://localhost:8050/auth/refresh
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDFAZ21haWwuY29tIiwiZXhwIjoxNzYxODIxNTY2LCJ1dWlkIjoiN2U3YzMwOGItYzNlNC00NjExLThlZWItMWZhMWZlYWFkMzUxIn0.mI1IgZPiVPXuNPM4GGkBYbuUiFmkkAoXGL3hy2NGA1U
+
+### login user ###
+POST http://localhost:8050/auth/logout
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDNAZ21haWwuY29tIiwiZXhwIjoxNzYxODIzODAwLCJ1dWlkIjoiNWQ5NDgwYzktNDFkOC00NzM4LWJiNWEtYjM0ZTdlMWI4YmI0In0.E8WGmolkcLHO_W3r4rUImQwvhJvi0NEZUj_fzRRexc4
+
+### create room chat ###
+POST http://localhost:8050/chat/rooms
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDFAZ21haWwuY29tIiwiZXhwIjoxNzYxOTE1ODIyLCJ1dWlkIjoiMjMwMTk0ZmYtNjE2ZC00NDEyLTgxODYtM2U4NmQ5OTk4OTRlIn0.HiJc9cTKAJbDOD8o-2B4NlapY0gntayK3yJt3LEQWu4
+Content-Type: application/json
+
+{ "name": "Private 1 Chat", "description": "Chat testing" }
+
+### create room chat ###
+POST http://localhost:8050/chat/rooms/7b6fc7c1-aed7-44d5-bb46-9acd16035c29/participants
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDFAZ21haWwuY29tIiwiZXhwIjoxNzYxOTE1ODIyLCJ1dWlkIjoiMjMwMTk0ZmYtNjE2ZC00NDEyLTgxODYtM2U4NmQ5OTk4OTRlIn0.HiJc9cTKAJbDOD8o-2B4NlapY0gntayK3yJt3LEQWu4
+Content-Type: application/json
+
+{ "user_uuid": "db0d17f4-6a25-47c3-a51e-6b90cb81f074", "role": "member" }
+
+### create message room chat ###
+POST http://localhost:8050/chat/rooms/7b6fc7c1-aed7-44d5-bb46-9acd16035c29/messages
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDFAZ21haWwuY29tIiwiZXhwIjoxNzYxOTE2MTUwLCJ1dWlkIjoiMjMwMTk0ZmYtNjE2ZC00NDEyLTgxODYtM2U4NmQ5OTk4OTRlIn0.Q1cFg5uKfshb2TBfOSsqXsAzL-KuSvWl8qew23B_VAU
+Content-Type: application/json
+
+{ "content": "apa kabar semua", "message_type": "text" }
+
+### read message room chat ###
+GET http://localhost:8050/chat/rooms/7b6fc7c1-aed7-44d5-bb46-9acd16035c29/messages
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXIwMDFAZ21haWwuY29tIiwiZXhwIjoxNzYxOTE2MTUwLCJ1dWlkIjoiMjMwMTk0ZmYtNjE2ZC00NDEyLTgxODYtM2U4NmQ5OTk4OTRlIn0.Q1cFg5uKfshb2TBfOSsqXsAzL-KuSvWl8qew23B_VAU

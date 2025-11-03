@@ -1,16 +1,39 @@
 'use client'
 
+import { useAppDispatch, useAppSelector } from '@/lib/hooks'
+import { clearError, loginUser } from '@/lib/slices/authSlice'
 import { Button } from 'flowbite-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
+import { useRouter } from 'next/navigation'
+import React, { useState } from 'react'
 import { FaUser, FaEye, FaGoogle, FaFacebook, FaCheck } from 'react-icons/fa'
 import { FaMessage } from 'react-icons/fa6'
 
 export default function LoginScreen() {
 
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const dispatch = useAppDispatch()
+  const router = useRouter()
+  const { loading, error } = useAppSelector((state) => state.auth)
+
   const handleShowPassword = () => {
     console.log("Masuk");
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    try {
+      const result = await dispatch(loginUser({ email, password }))
+
+      if (loginUser.fulfilled.match(result)) {
+        router.push('/dashboard')
+      }
+    } catch (error) {
+      // Error sudah dihandle di slice
+    }
   }
 
   return (
@@ -57,8 +80,13 @@ export default function LoginScreen() {
                 <div className='text-3xl font-bold dark:text-white'>Selamat Datang Kembali</div>
                 <div className='text-md dark:text-white'>Register sekarang <Link href="/login" className="text-blue-600 hover:underline dark:text-blue-500">Disini</Link></div>
               </div>
-              <div className='flex max-w-md flex-col gap-4'>
+              <div className='flex max-w-md flex-col gap-4' onSubmit={handleSubmit}>
                 <form className="">
+                  {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                      {error}
+                    </div>
+                  )}
                   <div className='flex flex-col gap-4'>
                     <div>
                       <label htmlFor="email-address-icon" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your Email</label>
@@ -66,7 +94,13 @@ export default function LoginScreen() {
                         <div className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
                           <FaMessage className="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" />
                         </div>
-                        <input type="email" id="email-address-icon" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@flowbite.com" />
+                        <input
+                          value={email}
+                          onChange={(e) => {
+                            setEmail(e.target.value)
+                            if (error) dispatch(clearError())
+                          }}
+                          type="email" id="email-address-icon" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@flowbite.com" />
                       </div>
                     </div>
                     <div>
@@ -77,11 +111,17 @@ export default function LoginScreen() {
                             <FaEye className="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" />
                           </button>
                         </div>
-                        <input type="password" id="password-address-icon" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="******" />
+                        <input
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value)
+                            if (error) dispatch(clearError())
+                          }}
+                          type="password" id="password-address-icon" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="******" />
                       </div>
                     </div>
                     <div>
-                      <Button className='w-full' color={'light'} size="lg" type="submit">Submit</Button>
+                      <Button className='w-full' disabled={loading} color={'light'} size="lg" type="submit">{loading ? 'Signing in...' : 'Sign in'}</Button>
                     </div>
                   </div>
                 </form>
