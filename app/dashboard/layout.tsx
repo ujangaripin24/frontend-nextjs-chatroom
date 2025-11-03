@@ -1,15 +1,25 @@
+'use client'
+
 import NavbarLayout from '@/layout/NavbarLayout'
 import SidebarLayout from '@/layout/SidebarLayout'
-import React from 'react'
+import React, { useState } from 'react'
 
 export default function layout({
   children
 }: Readonly<{ children: React.ReactNode }>) {
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => !prev)
+    console.log("triger dari layout dashboard", isSidebarOpen);
+  }
   return (
     <div>
       <div>
-        <NavbarLayout />
-        <SidebarLayout />
+        <NavbarLayout toggleSidebar={toggleSidebar} />
+        <SidebarLayout 
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setSidebarOpen}
+        />
         <div className="p-4 sm:ml-64">
           <div className="p-4 border-2 border-gray-200 border-dashed rounded-lg dark:border-gray-700 mt-14">
             {children}
