@@ -64,10 +64,10 @@ const SidebarLayout: React.FC<SidebarProps> = ({
                 </div>
               ) : (
                 rooms.map((room) => (
-                  <div
+                  <Link
                     key={room.uuid}
-                    onClick={() => handleRoomSelect(room.uuid)}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors mb-1 ${currentRoom === room.uuid
+                    href={`/dashboard/chat/${room.uuid}`}
+                    className={`block p-3 rounded-lg cursor-pointer transition-colors mb-1 ${currentRoom === room.uuid
                         ? 'bg-blue-600 text-white'
                         : 'hover:bg-gray-700 text-gray-200'
                       }`}
@@ -79,7 +79,7 @@ const SidebarLayout: React.FC<SidebarProps> = ({
                     <div className="text-xs text-gray-500 mt-1">
                       {new Date(room.created_at).toLocaleDateString()}
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </li>
