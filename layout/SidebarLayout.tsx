@@ -68,8 +68,8 @@ const SidebarLayout: React.FC<SidebarProps> = ({
                     key={room.uuid}
                     href={`/dashboard/chat/${room.uuid}`}
                     className={`block p-3 rounded-lg cursor-pointer transition-colors mb-1 ${currentRoom === room.uuid
-                        ? 'bg-blue-600 text-white'
-                        : 'hover:bg-gray-700 text-gray-200'
+                      ? 'bg-blue-600 text-white'
+                      : 'hover:bg-gray-700 text-gray-200'
                       }`}
                   >
                     <div className="font-medium truncate">{room.name}</div>

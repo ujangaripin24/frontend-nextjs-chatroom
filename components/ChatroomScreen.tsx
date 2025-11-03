@@ -1,37 +1,155 @@
-import React from 'react'
+'use client'
 
-export default function ChatroomScreen() {
+import { useEffect, useRef, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { useAppDispatch, useAppSelector } from '@/lib/hooks'
+import { fetchRoomMessages, sendNewMessage } from '@/lib/slices/chatSlice'
+import { fetchProfile } from '@/lib/slices/authSlice'
+
+export default function ChatRoomScreen() {
+  const params = useParams()
+  const roomUUID = params.uuid as string
+  const dispatch = useAppDispatch()
+  const { token, user } = useAppSelector((state) => state.auth)
+  const { messages, loading } = useAppSelector((state) => state.chat)
+  const [newMessage, setNewMessage] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const currentMessages = messages[roomUUID] || []
+
+  console.log('=== DEBUG USER ===')
+  console.log('Current User UUID:', user?.uuid)
+  console.log('Current User Data:', user)
+
+  useEffect(() => {
+    if (roomUUID && token) {
+      dispatch(fetchRoomMessages({ token, roomUUID }))
+    }
+  }, [roomUUID, token, dispatch])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [currentMessages])
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newMessage.trim() || !roomUUID || !token) return
+
+    await dispatch(sendNewMessage({
+      token,
+      roomUUID,
+      content: newMessage
+    }))
+    setNewMessage('')
+  }
+
+  useEffect(() => {
+    console.log('User data on mount:', user)
+    if (!user && token) {
+      console.log('Fetching user profile...')
+      dispatch(fetchProfile(token))
+    }
+  }, [user, token, dispatch])
+
+  const getCurrentUserUUID = () => {
+    if (!user?.uuid) {
+      console.warn('User UUID is not available')
+      return null
+    }
+    return user.uuid
+  }
+
+  const formatTime = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp)
+      return isNaN(date.getTime()) ? 'Just now' : date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch {
+      return 'Just now'
+    }
+  }
+
+  console.log('Current User UUID:', user?.uuid)
+  console.log('Messages:', currentMessages)
+
   return (
-    <div>
-      <div>chat room</div>
-      <div>
-        <form>
-          <label htmlFor="chat" className="sr-only">Your message</label>
-          <div className="flex items-center px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700">
-            <button type="button" className="inline-flex justify-center p-2 text-gray-500 rounded-lg cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600">
-              <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 18">
-                <path fill="currentColor" d="M13 5.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0ZM7.565 7.423 4.5 14h11.518l-2.516-3.71L11 13 7.565 7.423Z" />
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 1H2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1Z" />
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0ZM7.565 7.423 4.5 14h11.518l-2.516-3.71L11 13 7.565 7.423Z" />
-              </svg>
-              <span className="sr-only">Upload image</span>
-            </button>
-            <button type="button" className="p-2 text-gray-500 rounded-lg cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600">
-              <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.408 7.5h.01m-6.876 0h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM4.6 11a5.5 5.5 0 0 0 10.81 0H4.6Z" />
-              </svg>
-              <span className="sr-only">Add emoji</span>
-            </button>
-            <textarea id="chat" className="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Your message..."></textarea>
-            <button type="submit" className="inline-flex justify-center p-2 text-blue-600 rounded-full cursor-pointer hover:bg-blue-100 dark:text-blue-500 dark:hover:bg-gray-600">
-              <svg className="w-5 h-5 rotate-90 rtl:-rotate-90" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
-                <path d="m17.914 18.594-8-18a1 1 0 0 0-1.828 0l-8 18a1 1 0 0 0 1.157 1.376L8 18.281V9a1 1 0 0 1 2 0v9.281l6.758 1.689a1 1 0 0 0 1.156-1.376Z" />
-              </svg>
-              <span className="sr-only">Send message</span>
-            </button>
-          </div>
-        </form>
+    <div className="flex-1 flex flex-col bg-white h-screen">
+      <div className="border-b p-4 bg-white shadow-sm">
+        <h2 className="text-lg font-semibold">Chat Room</h2>
+        <p className="text-sm text-gray-500">User: {user?.uuid}</p>
       </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {loading ? (
+          <div className="text-center text-gray-500">Loading messages...</div>
+        ) : currentMessages.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            <div className="text-4xl mb-2">💬</div>
+            <p>No messages yet</p>
+            <p className="text-sm">Start the conversation!</p>
+          </div>
+        ) : (
+          currentMessages.map((message) => {
+            const currentUserUUID = getCurrentUserUUID()
+            const messageUserID = message.user_id || message.user_id || message.user_id
+            const isOwnMessage = currentUserUUID && messageUserID && currentUserUUID === messageUserID
+
+            console.log('=== DEBUG MESSAGE ===')
+            console.log('Message User ID:', messageUserID)
+            console.log('Current User UUID:', currentUserUUID)
+            console.log('Is Own Message:', isOwnMessage)
+
+            return (
+              <div
+                key={message.uuid || `msg-${message.created_at}-${Math.random()}`}
+                className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'
+                  }`}
+              >
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isOwnMessage
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-800'
+                    }`}
+                >
+                  <div className="text-sm">{message.content}</div>
+                  <div
+                    className={`text-xs mt-1 ${isOwnMessage
+                        ? 'text-blue-200'
+                        : 'text-gray-500'
+                      }`}
+                  >
+                    {formatTime(message.created_at)}
+                    {isOwnMessage && ' (You)'}
+                    {!messageUserID && ' [No Sender]'}
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <form onSubmit={handleSendMessage} className="border-t p-4 bg-white">
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type a message..."
+            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={!newMessage.trim()}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Send
+          </button>
+        </div>
+      </form>
     </div>
   )
 }

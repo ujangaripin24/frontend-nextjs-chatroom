@@ -6,7 +6,7 @@ export const fetchRooms = createAsyncThunk(
   async (token: string, { rejectWithValue }) => {
     try {
       const response = await chatAPI.getRooms(token)
-      return response
+      return response || []
     } catch (error: any) {
       return rejectWithValue(error.message)
     }

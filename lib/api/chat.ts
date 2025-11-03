@@ -23,14 +23,15 @@ export const chatAPI = {
         'Content-Type': 'application/json',
       },
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch rooms')
     }
-    
-    return response.json()
+
+    const data = await response.json()
+    return Array.isArray(data) ? data : []
   },
-    getRoomMessages: async (token: string, roomUUID: string): Promise<ChatMessage[]> => {
+  getRoomMessages: async (token: string, roomUUID: string): Promise<ChatMessage[]> => {
     const response = await fetch(`http://localhost:8050/chat/rooms/${roomUUID}/messages`, {
       method: 'GET',
       headers: {
@@ -38,14 +39,14 @@ export const chatAPI = {
         'Content-Type': 'application/json',
       },
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch messages')
     }
-    
+
     return response.json()
   },
-  
+
   sendMessage: async (token: string, roomUUID: string, content: string) => {
     const response = await fetch(`http://localhost:8050/chat/rooms/${roomUUID}/messages`, {
       method: 'POST',
@@ -58,11 +59,11 @@ export const chatAPI = {
         message_type: 'text'
       }),
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to send message')
     }
-    
+
     return response.json()
   }
 }
