@@ -6,34 +6,43 @@ import { Button } from 'flowbite-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { FaUser, FaEye, FaGoogle, FaFacebook, FaCheck } from 'react-icons/fa'
 import { FaMessage } from 'react-icons/fa6'
 
 export default function LoginScreen() {
-
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [isClient, setIsClient] = useState(false)
   const dispatch = useAppDispatch()
   const router = useRouter()
-  const { loading, error } = useAppSelector((state) => state.auth)
+  const { loading, error, isAuthenticated } = useAppSelector((state) => state.auth)
 
-  const handleShowPassword = () => {
-    console.log("Masuk");
-  }
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  useEffect(() => {
+    if (isClient && isAuthenticated) {
+      router.push('/dashboard')
+    }
+  }, [isAuthenticated, isClient, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const result = await dispatch(loginUser({ email, password }))
 
-    try {
-      const result = await dispatch(loginUser({ email, password }))
-
-      if (loginUser.fulfilled.match(result)) {
-        router.push('/dashboard')
-      }
-    } catch (error) {
-      // Error sudah dihandle di slice
+    if (loginUser.fulfilled.match(result)) {
+      router.push('/dashboard')
     }
+  }
+
+  if (!isClient || isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div>Loading...</div>
+      </div>
+    )
   }
 
   return (
@@ -107,9 +116,9 @@ export default function LoginScreen() {
                       <label htmlFor="password-address-icon" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your Password</label>
                       <div className="relative">
                         <div className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
-                          <button onClick={() => handleShowPassword()}>
+                          <div>
                             <FaEye className="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" />
-                          </button>
+                          </div>
                         </div>
                         <input
                           value={password}
