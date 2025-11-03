@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import authReducer from './slices/authSlice'
+import chatReducer from './slices/chatSlice'
 
 const getPreloadedState = () => {
   if (typeof window !== 'undefined') {
@@ -28,6 +29,7 @@ const getPreloadedState = () => {
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    chat: chatReducer
   },
   preloadedState: getPreloadedState(),
 })
