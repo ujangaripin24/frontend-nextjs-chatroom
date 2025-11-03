@@ -105,7 +105,15 @@ const chatSlice = createSlice({
       .addCase(sendNewMessage.fulfilled, (state, action) => {
         const { roomUUID, message } = action.payload
         if (state.messages[roomUUID]) {
-          state.messages[roomUUID].push(message)
+          const isDuplicate = state.messages[roomUUID].some(
+            msg => msg.uuid === message.uuid ||
+              (msg.content === message.content &&
+                msg.user_id === message.user_id &&
+                Math.abs(new Date(msg.created_at).getTime() - new Date(message.created_at).getTime()) < 5000)
+          )
+          if (!isDuplicate) {
+            state.messages[roomUUID].push(message)
+          }
         }
       })
   },

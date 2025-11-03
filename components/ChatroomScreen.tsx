@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
-import { fetchRoomMessages, sendNewMessage } from '@/lib/slices/chatSlice'
+import { addMessage, fetchRoomMessages, sendNewMessage } from '@/lib/slices/chatSlice'
 import { fetchProfile } from '@/lib/slices/authSlice'
 import { ChatWebSocket } from '@/lib/websocket/chatWebSocket'
 
@@ -21,6 +21,7 @@ export default function ChatRoomScreen() {
   useEffect(() => {
     if (token && roomUUID) {
       const chatWs = new ChatWebSocket(dispatch, token)
+
       chatWs.connect()
       setWs(chatWs)
 
@@ -42,17 +43,23 @@ export default function ChatRoomScreen() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim() || !roomUUID || !token || !ws) return
+    if (!newMessage.trim() || !roomUUID || !token || !ws || !user) return
 
-    ws.sendMessage(roomUUID, newMessage)
+    const tempMessage = {
+      uuid: `temp-${Date.now()}`,
+      user_id: user.uuid,
+      content: newMessage,
+      message_type: 'text',
+      created_at: new Date().toISOString()
+    }
 
-    await dispatch(sendNewMessage({
-      token,
+    dispatch(addMessage({
       roomUUID,
-      content: newMessage
+      message: tempMessage
     }))
-    
+
     setNewMessage('')
+    ws.sendMessage(roomUUID, newMessage)
   }
 
   useEffect(() => {
@@ -107,11 +114,6 @@ export default function ChatRoomScreen() {
             const currentUserUUID = getCurrentUserUUID()
             const messageUserID = message.user_id || message.user_id || message.user_id
             const isOwnMessage = currentUserUUID && messageUserID && currentUserUUID === messageUserID
-
-            console.log('=== DEBUG MESSAGE ===')
-            console.log('Message User ID:', messageUserID)
-            console.log('Current User UUID:', currentUserUUID)
-            console.log('Is Own Message:', isOwnMessage)
 
             return (
               <div
